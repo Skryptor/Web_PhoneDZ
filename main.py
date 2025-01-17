@@ -51,10 +51,10 @@ class UploadUser:
                 insert into Client (first_name, last_name, email)
                 VALUES (%s, %s, %s);
             """, (self.first_names, self.last_names, self.emails))
-
+            print('успешный успех ты есть')
         conn.commit()
 
-    def create_num (self, conn):
+    def create_num (self, conn ):
 
         if not all([self.number, self.userid]):
             raise ValueError('Что бы добавить номер необходимо добавить и айди конкретного пользователя')
@@ -64,44 +64,48 @@ class UploadUser:
                 insert into Numbers (number, id)
                 VALUES (%s, %s);
             """, (self.number, self.userid))
-
+            print('успешный успех твой номер есть')
         conn.commit()
     @staticmethod
     def add_number(conn, number, userid):
+        if not all([number, userid]):
+            raise ValueError("Необходимо указать номер и ID пользователя.")
         with conn.cursor() as cur:
             cur.execute("""
             insert into Numbers(number,id)
             VALUES (%s, %s);
         """, (number, userid))
+            print('успешный успех ты добавил доп.номер')
         conn.commit()
 
-    def update_value_num(self, conn):
+    def update_value_num(self, conn, number ,userid):
 
-        if not all([self.number, self.userid]):
+        if not all([number, userid]):
             raise ValueError('Что бы изменить номер необходимо добавить и айди конкретного пользователя или вы угарнули и не добавили номер?')
 
         with conn.cursor() as cur:
             cur.execute(""" 
                 update Numbers set number = %s WHERE id = %s
-            """, (self.number, self.userid))
+            """, (number, userid))
+            print('успешный успех изменил номер')
         conn.commit()
 
-    def update_value_client(self, conn):
+    def update_value_client(self, conn, first_names = None, last_names = None, emails = None):
 
         if not self.userid:
             raise ValueError('Что бы изменить данные нужно айди конкретного пользователя')
 
         updating = []
         values = []
-        if self.first_names is not None:
+        if first_names is not None:
             updating.append('first_name = %s')
-            values.append(self.first_names)
-        if self.last_names is not None:
+            values.append(first_names)
+        if last_names is not None:
             updating.append('last_name = %s')
-            values.append(self.last_names)
-        if self.emails is not None:
+            values.append(last_names)
+        if emails is not None:
             updating.append('email = %s')
-            values.append(self.emails)
+            values.append(emails)
 
         if not updating:
             raise ValueError("Нечего обновлять хорош испытывать этот код")
@@ -111,9 +115,10 @@ class UploadUser:
 
         with conn.cursor() as cur:
             cur.execute( value,tuple(values))
+            print('успешный успех изменил данные')
         conn.commit()
 
-    def delete_value(self, conn, table_name):
+    def delete_value(self, conn, table_name, first_name=None, last_name=None, email=None, number=None):
         if not self.userid:
             raise ValueError('Необходимо указать ID пользователя.')
 
@@ -121,20 +126,20 @@ class UploadUser:
         values = [self.userid]
 
         if table_name == "Client":
-            if self.first_name:
+            if first_name:
                 conditions.append("first_name = %s")
-                values.append(self.first_name)
-            if self.last_name:
+                values.append(first_name)
+            if last_name:
                 conditions.append("last_name = %s")
-                values.append(self.last_name)
-            if self.email:
+                values.append(last_name)
+            if email:
                 conditions.append("email = %s")
-                values.append(self.email)
+                values.append(email)
 
         elif table_name == "Numbers":
-            if self.number:
+            if number:
                 conditions.append("number = %s")
-                values.append(self.number)
+                values.append(number)
 
         else:
             raise ValueError('Неправильное имя таблицы.')
@@ -143,6 +148,7 @@ class UploadUser:
 
         with conn.cursor() as cur:
             cur.execute(query, tuple(values))
+            print('успешный успех че-то пропало')
         conn.commit()
 
     def search_user(self, conn, table_name, first_name=None, last_name=None, email=None, number=None):
@@ -169,10 +175,26 @@ class UploadUser:
 
         with conn.cursor() as cur:
             cur.execute(query, tuple(values))
+            print('успешный успех это ты ')
             result = cur.fetchall()
 
         return result
 create_table()
 
+user = UploadUser("Dmitriy", "Skryptor","Skryptor@git.com", "+7-777-77-77-777",1)
 
+user.create_user(conn)
+
+user.create_num(conn)
+
+UploadUser.add_number(conn, "0987654321", 1)
+
+user.update_value_num(conn,+7-999-99-99-999, 1)
+
+user.update_value_client(conn, last_names="Skryptorio")
+
+user.delete_value(conn, 'Numbers', number="+7-999-99-99-999")
+
+result = user.search_user(conn, "Client", last_name="Skryptorio")
+print(result)
 conn.close()
